@@ -1,313 +1,274 @@
-// creating a player entity
-game.PlayerEntity = me.Entity.extend({
-	// choosing one player out of all the others
+game.PlayerEntity = me.Entity.extend ({ //builds the player class
 	init: function(x, y, settings){
-		// linking the functions
 		this.setSuper(x, y);
-		this.setPlayerTimers();
+		this.setPlayerTimer();
 		this.setAttributes();
-		this.type = "PlayerEntity";
+		this.type="PlayerEntity";
 		this.setFlags();
-
-		// following the player and moving the screen 
-		me.game.viewport.follow(this.pos, me.game.viewport.AXIS.BOTH);
-
-		// linking the function
+		me.game.viewport.follow(this.pos, me.game.viewport.AXIS.BOTH); //locks camera on the character
 		this.addAnimation();
-
-		this.renderable.setCurrentAnimation("idle");
+		this.renderable.setCurrentAnimation("idle");	//sets the idle animation	
 	},
 
-	// player settings separated from the the init function
-	setSuper: function(x, y) {
-		this._super(me.Entity, 'init', [x, y, {
-			image: "player", 
-			width: 64,
-			height: 64,
-			spritewidth: "64",
-			spriteheight: "64",
-			getShape: function() {
-				return(new me.Rect(0, 0, 64, 64)).toPolygon();
-			}
-		}]);
+	setSuper: function(x, y){
+		this._super(me.Entity, 'init', [x, y, {//._super reaches to the object entity 
+		image: "player",//uses the image player
+		width: 64,	//preserves the height and width for player
+		height: 64,
+		spritewidth: "64", //uses height and width for player
+		spriteheight: "64",
+		getShape: function(){
+			return(new me.Rect(0, 0, 64, 64)) . toPolygon();	//creates a little rectangle for what the player can walk into.
+		}
+	}]);
 	},
+	setPlayerTimer: function(){
+		this.now = new Date().getTime();	//keeps track of what time it is
+		this.lastHit = this.now;	//same as this.now
+		this.lastSpear = this.now;
+		this.lastAttack = new Date().getTime();	
 
-	// separating this hit and attacks
-	setPlayerTimers: function() {
-		this.now = new Date().getTime();
-		this.lastHit = this.now; //	the last hit makes the tower lose health and fire up
-		this.lastAttack = new Date().getTime(); // Haven't used this
 	},
-
-	// separating health and speed 
-	setAttributes: function() {
-		this.health = game.data.playerHealth;
-		this.body.setVelocity(game.data.playerMoveSpeed, 20);
-		this.attack = game.data.playerAttack;
+	setAttributes: function(){
+		this.health = game.data.playerHealth;		
+		this.body.setVelocity(game.data.playerMoveSpeed, 20); //sets velocity to 5	
+		this.attack = game.data.playerAttack;	
 	},
-
-	// separating the player's death and position
-	setFlags: function() {
-		// Keeps track of which direction the character is going 
-		this.facing = "right";
-		this.dead = false;
+	setFlags: function(){
+		this.facing = "right";	//makes the character face right
+		
+		this.dead = false;	
 		this.attacking = false;
 	},
-
-	// separating the animations 
-	addAnimation: function() {
-		// adding new animations
-		this.renderable.addAnimation("idle", [78]);
-		this.renderable.addAnimation("walk", [117, 118, 119, 120, 121, 122, 123, 124, 125], 80);
-		this.renderable.addAnimation("attack", [65, 66, 67, 68, 69, 70, 71, 72], 80);
+	addAnimation: function(){
+		this.renderable.addAnimation("idle", [78]);	//idle animation
+		this.renderable.addAnimation("walk", [143, 144, 145, 146, 147, 148, 149, 150, 151], 80);	//walking animation		
+		this.renderable.addAnimation("attack", [195, 196, 197, 198, 199, 200], 80);	//setting the attack animation		
 	},
-
 	update: function(delta){
-		this.now = new Date().getTime();
-		// linking functions
+		this.now = new Date().getTime();	//everytime we call update it updates the time
 		this.dead = this.checkIfDead();
 		this.checkKeyPressesAndMove();
+		this.checkAbilityKeys();
 		this.setAnimation();
 		me.collision.check(this, true, this.collideHandler.bind(this), true);
-		this.body.update(delta);
-
+		this.body.update(delta);	//delta is the change in time
 		this._super(me.Entity, "update", [delta]);
 		return true;
 	},
 
-	// refactoring the death
-	checkIfDead: function() {
-		if (this.health <= 0) {
+	checkIfDead: function(){
+		if (this.health <= 0){
 			return true;
-		}
-		return false;
+		}		
 	},
 
-	// refactoring pressed keys and movement
-	checkKeyPressesAndMove: function() {
-		if(me.input.isKeyPressed("right")) {
+	checkKeyPressesAndMove: function(){
+		if(me.input.isKeyPressed("right")){	//checks to see if the right key is pressed
 			this.moveRight();
-		}else if(me.input.isKeyPressed("left")){
+		}
+		else if(me.input.isKeyPressed("left")){		//allows the player to move left
 			this.moveLeft();
-		}else {
-			this.body.vel.x = 0;
+		}
+		else{
+			this.body.vel.x = 0;	//stops the movement
 		}
 
-		if(me.input.isKeyPressed("jump") && !this.body.jumping && !this.body.falling) {
-			// linking the function
+		if(me.input.isKeyPressed("jump") && !this.jumping && !this.falling){	//allows the player to jump without double jumping or falling and jumping
 			this.jump();
 		}
 
-		this.attacking = me.input.isKeyPressed("attack");
+		this.attacking = me.input.isKeyPressed("attack");	//attack key		
 	},
 
-	// refactoring movement to the right
-	moveRight: function() {
-		// adds to the position of my x by the velocity defined above in 
-		// setVelocity() and multiplying it by me.timer.tick.
-		// me.timer.tick makes the movement look smooth
-		this.body.vel.x += this.body.accel.x * me.timer.tick;
-		// Keeps track of which direction the character is going 
-		this.facing = "right";
-		// makes the player flip
-		this.flipX(true);
-	},
-
-	// refactoring movement to the left
-	moveLeft: function() {
-		// Keeps track of which direction the character is going 
-		this.facing = "left";
-		this.body.vel.x -= this.body.accel.x * me.timer.tick;
+	moveRight: function(){
+		this.body.vel.x += this.body.accel.x * me.timer.tick; //adds the velocity to the set velocity and mutiplies by the me.timer.tick and makes the movement smooth
+		this.facing = "right";	//sets the character to face right
 		this.flipX(false);
 	},
-
-	// refactoring jump
-	jump: function() {
+	moveLeft: function(){
+		this.body.vel.x -= this.body.accel.x * me.timer.tick;
+		this.facing = "left";
+		this.flipX(true);			
+		},
+	jump: function(){
 		this.body.jumping = true;
 		this.body.vel.y -= this.body.accel.y * me.timer.tick;
-		me.audio.play("jumping_teon");
 	},
 
-	// refactoring animations 
-	setAnimation: function() {
-		if(this.attacking) {
-			if(!this.renderable.isCurrentAnimation("attack")) {
-				// sets the current animation to attack and once that is over
-				// goes back to the idle animation 
-				this.renderable.setCurrentAnimation("attack",  "idle");
-				// makes it so that the next time we start this sequence we begin
-				// from the first animation, not wherever we left off when we
-				// switched to another animation 
+	checkAbilityKeys: function(){
+		if(me.input.isKeyPressed("skill1")){
+			// this.speedBurst();
+		}else if(me.input.isKeyPressed("skill2")){
+			// this.eatCreep();
+		}else if(me.input.isKeyPressed("skill3")){
+			this.throwSpear();
+		}
+	},
+	throwSpear: function(){
+		if(this.now-this.lastSpear >= game.data.spearTimer*100 && game.data.ability3 > 0){
+			this.lastSpear = this.now;
+		var spear = me.pool.pull("spear", this.pos.x, this.pos.y, {}, this.facing);
+		me.game.world.addChild(spear, 10);
+		}
+		
+	},
+
+	setAnimation: function(){
+		if(this.attacking){
+			if(!this.renderable.isCurrentAnimation("attack")){
+				this.renderable.setCurrentAnimation("attack", "idle");
 				this.renderable.setAnimationFrame();
 			}
 		}
-		// makes it walk when you're pressing the keys to move and makes it stop walking when you don't press the keys
-		else if(this.body.vel.x !== 0 && !this.renderable.isCurrentAnimation("attack")){
-			if(!this.renderable.isCurrentAnimation("walk")) {
+		else if(this.body.vel.x !== 0 && !this.renderable.isCurrentAnimation("attack")){ //changes the animation from attack to walking
+			if (!this.renderable.isCurrentAnimation("walk")) {	//sets the current animation for walk
 				this.renderable.setCurrentAnimation("walk");
-			}
-		}else if(!this.renderable.isCurrentAnimation("attack")){
-			this.renderable.setCurrentAnimation("idle");
+			};			
+		}
+		else if(!this.renderable.isCurrentAnimation("attack")){	//changes the animation from attack to idle
+			this.renderable.setCurrentAnimation("idle");	//if the player is not walking it uses idle animation
 		}
 	},
 
-	loseHealth: function(damage) {
+	loseHealth: function(damage){
 		this.health = this.health - damage;
 	},
+	collideHandler: function(response){
+		if(response.b.type==='EnemyBaseEntity'){	//sees if the enemy base entitiy is near a player entity and if so it is solid from left and right and top
+		this.collideWithEnemyBase(response);
+		}
 
-	// doesn't let you collide with the EnemyBaseEntity
-	collideHandler: function(response) {
-		if(response.b.type==='EnemyBaseEntity') {
-			// linking to function
-			this.collideWithEnemyBase(response);
-		}else if(response.b.type==='EnemyCreep') {
-			// linking to function
+		else if(response.b.type==='EnemyCreep'){
 			this.collideWithEnemyCreep(response);
 		}
 	},
+	collideWithEnemyBase: function(response){
+		var ydif = this.pos.y - response.b.pos.y;
+		var xdif = this.pos.x - response.b.pos.x;
+		if(ydif<-40 && xdif<70 && xdif>-35){
+		 	this.body.falling=false;
+		 	this.body.vel.y = -1;
+		}
+		 if(xdif>-35 && this.facing==='right' && (xdif<0)){
+		 	this.body.vel.x = 0;
+		 	//this.pos.x = this.pos.x -1;
+		 }
+		 else if(xdif<70 && this.facing==='left' && (xdif>0)){
+		 	this.body.vel.x=0;
+		 	//this.pos.x = this.pos.x +1;
+		 }
 
-	// refactor colliding with enemy base
-	collideWithEnemyBase: function(response) {
-			var ydif = this.pos.y - response.b.pos.y;
-			var xdif = this.pos.x - response.b.pos.x;
-
-			// this is making the character not collide from the top
-			if(ydif<-40 && xdif< 70 && xdif>-35) {
-				this.body.falling = false;
-				this.body.vel.y = -1;
-			}
-			// this lets you move away from EnemyBaseEntity
-			else if(xdif>-35 && this.facing==='right' && (xdif<0)) {
-				this.body.vel.x = 0;
-			}
-			// this lets you move away from EnemyBaseEntity
-			else if(xdif<70 && this.facing==='left' && xdif>0){
-				this.body.vel.x = 0;
-			}
-			if(this.renderable.isCurrentAnimation("attack") && this.now-this.lastHit >= game.data.playerAttackTimer) {
-				this.lastHit = this.now; //	the last hit makes the tower lose health and fire up
-				response.b.loseHealth(game.data.playerAttack);
-			}
+		 if(this.renderable.isCurrentAnimation("attack") && this.now-this.lastHit >= game.data.playerAttackTimer){	//if the animation is attack it will lose the base health and that it will check when the lasthit was 
+		 		this.lastHit = this.now;
+		 		response.b.loseHealth(game.data.playerAttack);
+		 	}
+		
 	},
-
-	// refactor colliding with enemy creep
-	collideWithEnemyCreep: function(response) {
+	collideWithEnemyCreep: function(response){
 		var xdif = this.pos.x - response.b.pos.x;
 		var ydif = this.pos.y - response.b.pos.y;
-		// linking to function
+
 		this.stopMovement(xdif);
-		// linking to function
-		if(this.checkAttack(xdif, ydif)) {
-			// linking to function
-			this.hitCreep(response);
+
+		if(this.checkAttack(xdif, ydif)){
+			this.hitCreep(response);		 	
 		};
+
 	},
 
-	// refactoring movement 
-	stopMovement: function(xdif) {
-			// lets creep get hit by any side
-			if(xdif>0) {
-				// this.pos.x = this.pos.x + 1;
-				if(this.facing==="left") {
-					this.body.vel.x = 0;
-				}
-			}else {
-				// this.pos.x = this.pos.x - 1;
-				if(this.facing==="right") {
-					this.body.vel.x = 0;
-				}
+	stopMovement: function(xdif){
+		if(xdif > 0){
+			//this.pos.x = this.pos.x + 1;
+			if (this.facing === "left"){
+				this.body.vel.x = 0;
 			}
-	},
-
-	// refactoring attack
-	checkAttack: function(xdif, ydif) {
-			// if the player hits the creep 5, times it dies and disappear
-			if(this.renderable.isCurrentAnimation("attack") && this.now-this.lastHit >= game.data.playerAttackTimer
-				&& (Math.abs(ydif) <=40) && 
-				(((xdif>0) && this.facing==="left") || ((xdif<0) && this.facing==="right"))
-				){
-				this.lastHit = this.now;
-				// if the creeps health is less than our attack, execute code in if statement
-				return true;
-	}
-	return false;
-	},
-
-	// refactoring hitting the creep
-	hitCreep: function(response) {
-		if(response.b.health <= game.data.playerAttack) {
-			// adds one gold for a creep kill
-			game.data.gold += 1;
-			console.log("Current gold " + game.data.gold);
 		}
-
-		response.b.loseHealth(game.data.playerAttack);
+		else{
+			//this.pos.x = this.pos.x - 1;
+			if(this.facing === "right"){
+				this.body.vel.x = 0;
+			}
+		}
+	},
+	checkAttack: function(xdif, ydif){
+		if(this.renderable.isCurrentAnimation("attack") && this.now - this.lastHit >= game.data.playerAttackTimer
+			&& (Math.abs(ydif) <=40) && 
+			((xdif>0) && this.facing==="left") || (((xdif<0) && this.facing === "right"))){
+			this.lastHit = this.now;
+			return true;
+		}
+			return false;
+	},
+	hitCreep: function(response){
+		 	if(response.b.health <= game.data.playerAttack){
+		 		game.data.gold += 1;
+		 	}
+		 	response.b.loseHealth(game.data.playerAttack);		
 	}
 });
 
-// i tried adding a creep on the player team, intermediate 
-/*game.PlayerCreep = me.Entity.extend({
+
+
+//intermeidiae challenge creating an ally creep
+game.MyCreep = me.Entity.extend({
 	init: function(x, y, settings){
 		this._super(me.Entity, 'init', [x, y, {
-			image: "player", 
-			width: 64,
-			height: 64,
-			spritewidth: "64",
-			spriteheight: "64",
-			getShape: function() {
-				return(new me.Rect(0, 0, 64, 64)).toPolygon();
+			image: "creep2",
+			width: 100,
+			height:85,
+			spritewidth: "100",
+			spriteheight: "85",
+			getShape: function(){
+				return (new me.Rect(0, 0, 52, 100)).toPolygon();	
 			}
 		}]);
-		this.type = "PlayerCreep";
-		this.health = game.data.playerCreepHealth;
-		this.facing = "right";
-		this.now = new Date().getTime();
-		this.lastHit = this.now;
-		this.renderable.addAnimation("idle", [78]);
-		this.renderable.addAnimation("walk", [117, 118, 119, 120, 121, 122, 123, 124, 125], 80);
-		this.renderable.addAnimation("attack", [65, 66, 67, 68, 69, 70, 71, 72], 80);
-		this.renderable.setCurrentAnimation("idle");
-		update: function(delta) {
-			this.now = new Date().getTime();
-			if (this.health >= 0) {
-				this.dead = true;
-				this.pos.x = 10;
-				this.pos.y = 0;
-				this.health = game.data.playerCreepHealth;
+		
+		 this.health = game.data.allyCreepHealth;
+		 this.alwaysUpdate = true;
+		// //this.attacking lets us know if the enemy is currently attacking
+		 this.attacking = false;
+		// //keeps track of when our creep last attacked anyting
+		 this.lastAttacking = new Date().getTime();
+		 this.lastHit = new Date().getTime();
+		 this.now = new Date().getTime();
+
+		this.body.setVelocity(game.data.allyCreepMoveSpeed, 20);
+
+		this.type = "MyCreep";
+
+		this.renderable.addAnimation("walk", [0, 1, 2, 3, 4], 80);
+		this.renderable.setCurrentAnimation("walk");
+	},
+
+	update: function(delta) {
+		// this.now = new Date().getTime();
+		this.body.vel.x += this.body.accel.x * me.timer.tick;
+		this.flipX(true);
+		
+		me.collision.check(this, true, this.collideHandler.bind(this), true);
+
+		this.body.update(delta);
+
+		this._super(me.Entity, "update", [delta]);
+		return true;
+
+		},
+	
+
+	collideHandler: function(response)	{
+		if(response.b.type==='EnemyBaseEntity'){
+			this.attacking = true;
+			//this.lastAttacking = this.now;
+			this.body.vel.x = 0;
+			this.pos.x = this.pos.x +1;
+			//checks that it has been at least 1 second since this creep hit a base
+			if((this.now-this.lastHit <= game.data.allyCreepAttackTimer)){
+				//updates the last hit timer
+				this.lastHit = this.now;
+				//makes the player base call its loseHealth	function and passes it a damage of 1
+				response.b.loseHealth(1);
+			 }
 			}
-			if(me.input.isKeyPressed("right")) {
-				// adds to the position of my x by the velocity defined above in 
-				// setVelocity() and multiplying it by me.timer.tick.
-				// me.timer.tick makes the movement look smooth
-				this.body.vel.x += this.body.accel.x * me.timer.tick;
-				// Keeps track of which direction the character is going 
-				this.facing = "right";
-				// makes the player flip
-				this.flipX(true);
-			}else {
-				this.body.vel.x = 0;
-			}
-			if(me.input.isKeyPressed("attack")) {
-				if(!this.renderable.isCurrentAnimation("attack")) {
-					console.log(!this.renderable.isCurrentAnimation("attack"));
-					// sets the current animation to attack and once that is over
-					// goes back to the idle animation 
-					this.renderable.setCurrentAnimation("attack",  "idle");
-					// makes it so that the next time we start this sequence we begin
-					// from the first animation, not wherever we left off when we
-					// switched to another animation 
-					this.renderable.setAnimationFrame();
-				}
-			}
-			// makes it walk when you're pressing the keys to move and makes it stop walking when you don't press the keys
-			else if(this.body.vel.x !== 0 && !this.renderable.isCurrentAnimation("attack")){
-				if(!this.renderable.isCurrentAnimation("walk")) {
-					this.renderable.setCurrentAnimation("walk");
-				}
-			}else if(!this.renderable.isCurrentAnimation("attack")){
-				this.renderable.setCurrentAnimation("idle");
-			}
-			this._super(me.Entity, "update", [delta]);
-			return true;
 		}
-});*/
+	});

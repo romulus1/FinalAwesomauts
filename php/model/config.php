@@ -1,23 +1,21 @@
 <?php
-        require_once(__DIR__ . "/Database.php");
-        session_start();
-        // Sessions store user information.
-        session_regenerate_id(true);
-        // Updates the current session id with a newly generated one
+	require_once(__DIR__ . "/database.php"); // brings info from config.php to this file and concatentates the directory from here
+ 	session_start();
+ 	session_regenerate_id(true); //everytime it is called it regenerates the id and uses the original session and creates a new session
 
-// This is keeping all the files in one page so you won't have to update anything. 
-        $path = "/TEST/php/";
+ 	//creates a path to /blog/
+	$path = "/awesomenauts_db/php/";
+	// variables below enables our database to connect to the server
+	$host = "localhost";	
+	$username = "root";
+	$password = "root";
+	$database = "awesomenauts_db";
 
-// Moved the variables from database.php here to save space.
-        $host = "localhost";
-        $username = "username";
-        $password = "passw";
-        $database = "TEST_db";
+	if (!isset($_SESSION["connection"])) {
+		# code...
+		//creates a database object
+			$connection = new Database($host, $username, $password, $database);
+			$_SESSION["connection"] = $connection;
+	}
 
-// Connecting a new database but with the same variables and it's putting all the repeated code in other files in one place.
-        if (!isset($_SESSION["connection"])) {
-            $connection = new Database($host, $username, $password, $database);
-            $_SESSION["connection"] = $connection;
-        }
-        
-// Ending session
+?>

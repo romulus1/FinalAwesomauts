@@ -1,28 +1,29 @@
 
 /* Game namespace */
 var game = {
+
 	// an object where to store game information
 	data : {
 		// score
 		score : 0,
-		// sets global variables so it can be used in other places
-		enemyBaseHealth: 1,
-		playerBaseHealth: 1, 
+		option1: "",
+		option2: "",
+		allyCreepHealth: 10,
+		allyCreepMoveSpeed: 3,
+		allyCreepAttackTimer: 1000,
+		enemyBaseHealth: 10,
+		playerBaseHealth: 10,
 		enemyCreepHealth: 10,
 		playerHealth: 10,
-		/* intermediate */ playerCreepHealth: 10,
 		enemyCreepAttack: 1,
 		playerAttack: 1,
-		/*orcBaseDamage: 10,
-		orcBaseHealth: 100,
-		orcBaseSpeed: 3,
-		orcBaseDefense: 0,*/
-		playerAttackTimer: 300,
+		playerAttackTimer: 1000,
 		enemyCreepAttackTimer: 1000,
-		playerMoveSpeed: 5,
-		creepMoveSpeed: 5,
-		gameTimerManager: "",
-		heroDeathManager: "",
+		playerMoveSpeed: 3,
+		creepMoveSpeed: 3,
+		GameTimerManager: "",
+		HeroDeathManager: "",
+		spearTimer: 15,
 		player: "",
 		exp: 0,
 		gold: 0,
@@ -34,19 +35,20 @@ var game = {
 		skill3: 0,
 		exp1: 0,
 		exp2: 0,
-		exp3: 0,
-		exp4: 0,
+		exp3: 0, 
+		exp4:0,
 		win: "",
 		pausePos: "",
 		buyscreen: "",
 		buytext: ""
 	},
 	
+	
 	// Run on page load.
 	"onload" : function () {
 	// Initialize the video.
-	if (!me.video.init("screen",  me.video.CANVAS, 1067, 600, true, '1.0')) {
-		alert("Your browser does not support HTML5 canvas.");
+	if (!me.video.init("screen",  me.video.CANVAS, 1067, 600, true, '1.0')) {	//loads the resolution
+		alert("Your browser does not support HTML5 canvas.");	
 		return;
 	}
 
@@ -56,12 +58,9 @@ var game = {
 			me.plugin.register.defer(this, debugPanel, "debug");
 		});
 	}
-
 	me.state.SPENDEXP = 112;
 	me.state.LOAD = 113;
 	me.state.NEW = 114;
-
-
 	// Initialize the audio.
 	me.audio.init("mp3,ogg");
 
@@ -77,23 +76,22 @@ var game = {
 
 	// Run on game resources loaded.
 	"loaded" : function () {
-		// registering the player, playerbase, the enemybase, the enemycreep
-		me.pool.register("player", game.PlayerEntity, true);
-		// intermediate me.pool.register("PlayerCreep", game.PlayerCreep, true);
-		me.pool.register("PlayerBase", game.PlayerBaseEntity);
-		me.pool.register("EnemyBase", game.EnemyBaseEntity);
-		me.pool.register("EnemyCreep", game.EnemyCreep, true);
-		me.pool.register("GameTimerManager", game.GameTimerManager);
-		me.pool.register("HeroDeathManager", game.HeroDeathManager);
-		me.pool.register("ExperienceManager", game.ExperienceManager);
+		me.pool.register("player", game.PlayerEntity, true);	//adds the player to the pool to be registered
+		me.pool.register("PlayerBase", game.PlayerBaseEntity, true);	//adds the player base to the pool
+		me.pool.register("EnemyBase", game.EnemyBaseEntity, true);		//adds the enemy base to the pool
+		me.pool.register("EnemyCreep", game.EnemyCreep, true);	//adds the enemy creep to the pool
+		me.pool.register("MyCreep", game.MyCreep, true);	
+		me.pool.register("GameTimerManager", game.GameTimerManager);	//adds the game manager to the pool
+		me.pool.register("HeroDeathManager", game.HeroDeathManager);	//adds the hero death manager to the pool	
+		me.pool.register("ExperienceManager", game.ExperienceManager);	//adds the experience manager to the pool				
 		me.pool.register("SpendGold", game.SpendGold);
-
+		me.pool.register("spear", game.SpearThrow);		
 		me.state.set(me.state.MENU, new game.TitleScreen());
 		me.state.set(me.state.PLAY, new game.PlayScreen());
 		me.state.set(me.state.SPENDEXP, new game.SpendExp());
-                me.state.set(me.state.LOAD, new game.LoadProfile());
-                me.state.set(me.state.NEW, new game.NewProfile());
+		me.state.set(me.state.LOAD, new game.loadProfile());				
+		me.state.set(me.state.NEW, new game.newProfile());
 		// Start the game.
-		me.state.change(me.state.MENU);
+		me.state.change(me.state.MENU); //allows the game to play
 	}
 };
